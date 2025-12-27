@@ -304,6 +304,7 @@ export class BlockCreator {
    * @param {object} options - Options object
    * @param {string} options.filename - Name of the challenge file
    * @param {string} options.block - Name of the block
+   * @param {number} options.blockLength - How many files in the block
    * @param {object} options.meta - Meta information for the block
    * @param {boolean} options.isAudited - Whether the block is audited for i18n
    * @param {Function} parser - Parser function to use (defaults to parseMD)
@@ -313,9 +314,16 @@ export class BlockCreator {
     {
       filename,
       block,
+      blockLength,
       meta,
       isAudited
-    }: { filename: string; block: string; meta: Meta; isAudited: boolean },
+    }: {
+      filename: string;
+      block: string;
+      blockLength: number;
+      meta: Meta;
+      isAudited: boolean;
+    },
     parser = parseMD
   ) {
     log(
@@ -328,9 +336,8 @@ export class BlockCreator {
     const langUsed = isAudited && existsSync(i18nPath) ? this.lang : 'english';
 
     const challengePath = langUsed === 'english' ? englishPath : i18nPath;
-
     const challenge = translateCommentsInChallenge(
-      await parser(challengePath),
+      await parser(challengePath, block, blockLength),
       langUsed,
       this.commentTranslations
     );
@@ -352,10 +359,10 @@ export class BlockCreator {
     const challengeFiles = readdirSync(blockDir).filter(file =>
       file.endsWith('.md')
     );
-
+    const blockLength = challengeFiles.length;
     return await Promise.all(
       challengeFiles.map(filename =>
-        this.createChallenge({ filename, block, meta, isAudited })
+        this.createChallenge({ filename, block, meta, blockLength, isAudited })
       )
     );
   }

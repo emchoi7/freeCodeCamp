@@ -5,6 +5,11 @@ const { readSync } = require('to-vfile');
 const unified = require('unified');
 const addFillInTheBlank = require('./plugins/add-fill-in-the-blank');
 const addFrontmatter = require('./plugins/add-frontmatter');
+const {
+  validateEditableRegionMarkers,
+  validateSolutionAtLastStep,
+  validateNoSolution
+} = require('./plugins/validate-workshop-file');
 const validateSections = require('./plugins/validate-sections');
 const addSeed = require('./plugins/add-seed');
 const addSolution = require('./plugins/add-solution');
@@ -68,10 +73,37 @@ const processor = unified()
     'transcript'
   ]);
 
-exports.parseMD = function parseMD(filename) {
+exports.parseMD = function parseMD(filename, block, blockLength) {
   return new Promise((resolve, reject) => {
     const file = readSync(filename);
     const tree = processor.parse(file);
+
+    if (block.split('-')[0] === 'workshop') {
+      const workshopValidationProcessor = unified().use(
+        validateEditableRegionMarkers
+      );
+      workshopValidationProcessor.run(tree, file, function (err) {
+        if (err) {
+          reject(err);
+        }
+      });
+
+      // Only the last step file of workshops should have solutions available
+      if (tree.children && tree.children[0].value) {
+        let workshopSolutionProcessor;
+        if (tree.children[0].value.split('-').at(-1) === String(blockLength)) {
+          workshopSolutionProcessor = unified().use(validateSolutionAtLastStep);
+        } else {
+          workshopSolutionProcessor = unified().use(validateNoSolution);
+        }
+        workshopSolutionProcessor.run(tree, function (err) {
+          if (err) {
+            err.message += ' in file ' + filename;
+            reject(err);
+          }
+        });
+      }
+    }
 
     processor.run(tree, file, function (err, node, file) {
       if (!err) {

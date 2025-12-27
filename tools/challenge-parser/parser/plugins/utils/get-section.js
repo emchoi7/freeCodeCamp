@@ -55,4 +55,4 @@ function getAllSections(tree, marker) {
   return starts.map(_getSection(tree));
 }
 
-module.exports = { getSection, getAllSections, isMarker };
+module.exports = { getSection, getAllSections, isMarker, startNode };

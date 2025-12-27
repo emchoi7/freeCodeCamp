@@ -30,7 +30,11 @@ export interface ParsedChallenge {
  * @param filename - Path to the markdown file to parse
  * @returns Promise that resolves to the parsed challenge data
  */
-export function parseMD(filename: string): Promise<ParsedChallenge>;
+export function parseMD(
+  filename: string,
+  block: string,
+  block: number
+): Promise<ParsedChallenge>;
 
 /**
  * Parses a markdown challenge file synchronously
